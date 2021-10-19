@@ -1,7 +1,14 @@
 #include<stdio.h>
 #include <stdlib.h>
+#include<conio.h>
 
 char BOMBA = '@';
+char ASTERISCO = '*';
+char CERQUILHA = '#';
+char VAZIO = '0';
+
+int xx = 0;
+int yy = 0;
 
 typedef struct
 {
@@ -25,10 +32,11 @@ FILE* abrirAquivo(char* nomeArquivo)
 
 void menu()
 {
-    int opcao = 0;
+    char opcao = '0';
 
     do
     {
+        system("cls");
         printf("\n\n**** Campo Minado ****\n");
         printf("\n");
         printf("[1] - Novo jogo\n");
@@ -36,34 +44,35 @@ void menu()
         printf("[3] - Sair\n");
         printf("\n");
 
-        scanf("%i", &opcao);
+        opcao = getch();
 
         switch(opcao)
         {
-        case 1:
+        case '1':
             novoJogo();
             break;
-        case 2:
+        case '2':
             recordes();
             break;
-        case 3:
+        case '3':
             break;
         default:
             printf("Opcao invalida");
         }
     }
-    while(opcao != 3 );
+    while(opcao != '3' );
 }
 
 void novoJogo()
 {
 
-    int opcao = 0;
+    char opcao = '0';
     game gameObject;
 
 
     do
     {
+        system("cls");
         printf("\n\n**** Novo Jogo ****\n");
         printf("\n");
         printf("[1] - Facil (8x8) - 13 bombas\n");
@@ -72,32 +81,32 @@ void novoJogo()
         printf("[4] - Voltar ao menu\n");
         printf("\n");
 
-        scanf("%i", &opcao);
+        opcao = getch();
 
         switch(opcao)
         {
-        case 1:
+        case '1':
             gameObject.quantidadeBombas = 13;
             gameObject.tamanhoMapa = 8;
             jogar(gameObject);
             break;
-        case 2:
+        case '2':
             gameObject.quantidadeBombas = 28;
             gameObject.tamanhoMapa = 12;
             jogar(gameObject);
             break;
-        case 3:
+        case '3':
             gameObject.quantidadeBombas = 51;
             gameObject.tamanhoMapa = 16;
             jogar(gameObject);;
             break;
-        case 4:
+        case '4':
             break;
         default:
             printf("Opcao invalida");
         }
     }
-    while(opcao != 4 || opcao != 3 || opcao != 2 || opcao != 1);
+    while(opcao != '4' || opcao != '3' || opcao != '2' || opcao != '1');
 }
 
 void jogar(game *gameObject)
@@ -121,14 +130,22 @@ void jogar(game *gameObject)
         {
             for(int y = 0; y < gameObject->tamanhoMapa; y++)
             {
-                if(gameObject->mapaMascarado[x][y] == '*')
+                if(x == xx && y == yy)
                 {
-                    printf(" %c ", gameObject->mapa[x][y]);
+                    printf(" _ ");
                 }
                 else
                 {
-                    printf(" %c ", gameObject->mapaMascarado[x][y]);
+                    if(gameObject->mapaMascarado[x][y] == ASTERISCO)
+                    {
+                        printf(" %c ", gameObject->mapa[x][y]);
+                    }
+                    else
+                    {
+                        printf(" %c ", gameObject->mapaMascarado[x][y]);
+                    }
                 }
+
             }
 
             printf("\n");
@@ -154,7 +171,7 @@ void criarMapa(game* gameObject)
     {
         for(int y = 0; y < gameObject->tamanhoMapa; y++)
         {
-            gameObject->mapa[x][y] = '0';
+            gameObject->mapa[x][y] = VAZIO;
         }
     }
 
@@ -215,7 +232,7 @@ void criarMapa(game* gameObject)
                     contadorBombas++;
                 }
 
-                gameObject->mapa[x][y] = contadorBombas + '0';
+                gameObject->mapa[x][y] = contadorBombas + VAZIO;
             }
         }
     }
@@ -233,37 +250,78 @@ void criarMapaMascarado(game* gameObject)
     {
         for(int y = 0; y < gameObject->tamanhoMapa; y++)
         {
-            gameObject->mapaMascarado[x][y] = '#';
+            gameObject->mapaMascarado[x][y] = CERQUILHA;
         }
     }
 }
 
 void clicaNoMapa(game* gameObject)
 {
+    char opcao = getch();
 
-    int x, y;
-    printf("\n coordenadas: ");
-    scanf("%i %i", &x, &y);
+    switch(opcao)
+    {
+    case 'w':
+    {
+        if((xx-1) >= 0)
+        {
+            xx--;
+        }
+        break;
+    }
+    case 's':
+    {
+        if((xx+1) <= (gameObject->tamanhoMapa - 1))
+        {
+            xx++;
+        }
+        break;
+    }
+    case 'a':
+    {
+        if((yy-1) >= 0)
+        {
+            yy--;
+        }
+        break;
+    }
+    case 'd':
+    {
+        if((yy+1) <= (gameObject->tamanhoMapa - 1))
+        {
+            yy++;
+        }
+        break;
+    }
+    case '\r':
+    {
+        printf("DIGITOU ENTER");
+        mostrarPosicao(xx,yy, gameObject);
+    }
+    }
 
-    mostrarPosicao(x,y, gameObject);
+
 }
 
 void mostrarPosicao(
     int x, int y,
     game* gameObject)
 {
-    if(gameObject->mapaMascarado[x][y] == '*') {
+    if(gameObject->mapaMascarado[x][y] == ASTERISCO)
+    {
         return;
     }
 
     if(gameObject->mapa[x][y] != BOMBA)
     {
-        gameObject->mapaMascarado[x][y] = '*';
-    }else {
-        gameObject->mapaMascarado[x][y] = '*';
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
+    }
+    else
+    {
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
     }
 
-    if(gameObject->mapa[x][y] == '0')
+    if(gameObject->mapa[x][y] == VAZIO)
     {
         if(x+1 < gameObject->tamanhoMapa)
         {
