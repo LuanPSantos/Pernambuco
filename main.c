@@ -7,9 +7,6 @@ char ASTERISCO = '*';
 char CERQUILHA = '#';
 char VAZIO = '0';
 
-int xx = 0;
-int yy = 0;
-
 typedef struct
 {
     int tamanhoMapa;
@@ -18,8 +15,20 @@ typedef struct
     char** mapaMascarado; // # e *
 } game;
 
+typedef struct
+{
+    int x;
+    int y;
+} posicao;
+
+posicao posJogador;
+
 int main()
 {
+    posJogador.x = 0;
+    posJogador.y = 0;
+    srand(time(NULL));
+
     menu();
 }
 
@@ -86,7 +95,7 @@ void novoJogo()
         switch(opcao)
         {
         case '1':
-            gameObject.quantidadeBombas = 13;
+            gameObject.quantidadeBombas = 3;
             gameObject.tamanhoMapa = 8;
             jogar(gameObject);
             break;
@@ -98,7 +107,7 @@ void novoJogo()
         case '3':
             gameObject.quantidadeBombas = 51;
             gameObject.tamanhoMapa = 16;
-            jogar(gameObject);;
+            jogar(gameObject);
             break;
         case '4':
             break;
@@ -130,7 +139,7 @@ void jogar(game *gameObject)
         {
             for(int y = 0; y < gameObject->tamanhoMapa; y++)
             {
-                if(x == xx && y == yy)
+                if(x == posJogador.x && y == posJogador.y)
                 {
                     printf(" _ ");
                 }
@@ -162,27 +171,39 @@ void jogar(game *gameObject)
 void criarMapa(game* gameObject)
 {
 
+    int qntPosLivre = gameObject->tamanhoMapa * gameObject->tamanhoMapa;
+    posicao posicoesLivres[qntPosLivre];
+
     char **mapa = (char **)malloc(gameObject->tamanhoMapa * sizeof(char*));
     for(int i = 0; i < gameObject->tamanhoMapa; i++) mapa[i] = (char*) malloc(gameObject->tamanhoMapa * sizeof(char));
 
     gameObject->mapa = mapa;
 
-    for(int x = 0; x < gameObject->tamanhoMapa; x++)
+    // Cria o mapa vazio
+    for(int y = 0; y < gameObject->tamanhoMapa; y++)
     {
-        for(int y = 0; y < gameObject->tamanhoMapa; y++)
+        for(int x = 0; x < gameObject->tamanhoMapa; x++)
         {
-            gameObject->mapa[x][y] = VAZIO;
+            gameObject->mapa[y][x] = ' ';
+
+            posicoesLivres[y * gameObject->tamanhoMapa + x].x = x;
+            posicoesLivres[y * gameObject->tamanhoMapa + x].y = y;
         }
     }
 
+    // Coloca as bombas
     for(int i = 0; i < gameObject->quantidadeBombas; i++)
     {
         int x = rand() % gameObject->tamanhoMapa;
         int y = rand() % gameObject->tamanhoMapa;
 
-        gameObject->mapa[x][y] = BOMBA;
+        gameObject->mapa[y][x] = BOMBA;
+        posicoesLivres[y * gameObject->tamanhoMapa + x].x = -1;
+        posicoesLivres[y * gameObject->tamanhoMapa + x].y = -1;
+        qntPosLivre--;
     }
 
+    // Coloca os numeros
     for(int x = 0; x < gameObject->tamanhoMapa; x++)
     {
         for(int y = 0; y < gameObject->tamanhoMapa; y++)
@@ -232,10 +253,48 @@ void criarMapa(game* gameObject)
                     contadorBombas++;
                 }
 
-                gameObject->mapa[x][y] = contadorBombas + VAZIO;
+                if(contadorBombas != 0) {
+                    posicoesLivres[x * gameObject->tamanhoMapa + y].x = -1;
+                    posicoesLivres[x * gameObject->tamanhoMapa + y].y = -1;
+                    qntPosLivre--;
+                    gameObject->mapa[x][y] = contadorBombas + VAZIO;
+                }
+
+
             }
         }
     }
+
+    posicao posLivres[qntPosLivre];
+    for(int i = 0, j = 0; i < gameObject->tamanhoMapa * gameObject->tamanhoMapa; i++) {
+        if(posicoesLivres[i].x != -1 && posicoesLivres[i].y != -1) {
+            posLivres[j].x = posicoesLivres[i].x;
+            posLivres[j].y = posicoesLivres[i].y;
+            j++;
+        }
+    }
+
+    char palavra[10] = "PERNAMBUCO";
+
+    int iSorteado = 0, numerosAleatorios[10];
+    do{
+        numerosAleatorios[iSorteado] = rand() % qntPosLivre;
+        int igual = 0;
+        for(int j = 0; j < iSorteado; j++){
+            if(numerosAleatorios[j] == numerosAleatorios[iSorteado])
+                igual = 1;
+        }
+
+        if(igual == 0)
+            iSorteado++;
+    }while(iSorteado < 10);
+
+
+    for(int i = 0; i < 10; i++)
+    {
+        gameObject->mapa[posLivres[numerosAleatorios[i]].y][posLivres[numerosAleatorios[i]].x] = palavra[i];
+    }
+
 }
 
 void criarMapaMascarado(game* gameObject)
@@ -263,46 +322,70 @@ void clicaNoMapa(game* gameObject)
     {
     case 'w':
     {
-        if((xx-1) >= 0)
+        if((posJogador.x-1) >= 0)
         {
-            xx--;
+            posJogador.x--;
         }
         break;
     }
     case 's':
     {
-        if((xx+1) <= (gameObject->tamanhoMapa - 1))
+        if((posJogador.x+1) <= (gameObject->tamanhoMapa - 1))
         {
-            xx++;
+            posJogador.x++;
         }
         break;
     }
     case 'a':
     {
-        if((yy-1) >= 0)
+        if((posJogador.y-1) >= 0)
         {
-            yy--;
+            posJogador.y--;
         }
         break;
     }
     case 'd':
     {
-        if((yy+1) <= (gameObject->tamanhoMapa - 1))
+        if((posJogador.y+1) <= (gameObject->tamanhoMapa - 1))
         {
-            yy++;
+            posJogador.y++;
         }
+        break;
+    }
+    case 'p':
+    {
+
+        char palavra[10];
+        printf("Digite a palavra: ");
+        scanf("%s", &palavra);
+
+        printf("\nHUUUM %s", palavra);
         break;
     }
     case '\r':
     {
-        printf("DIGITOU ENTER");
-        mostrarPosicao(xx,yy, gameObject);
+        mostrarPosicao(posJogador.x, posJogador.y, gameObject);
     }
     }
 
 
 }
 
+void mostrarPosicao(
+    int x, int y,
+    game* gameObject) {
+
+
+    if(gameObject->mapa[x][y] != BOMBA)
+    {
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
+    }
+    else
+    {
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
+    }
+}
+/*
 void mostrarPosicao(
     int x, int y,
     game* gameObject)
@@ -363,7 +446,7 @@ void mostrarPosicao(
             mostrarPosicao(x + 1, y - 1, gameObject);
         }
     }
-}
+}*/
 
 void recordes()
 {
