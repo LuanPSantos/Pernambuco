@@ -1,6 +1,7 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include<conio.h>
+#include <conio.h>
+#include <string.h>
 
 char BOMBA = '@';
 char ASTERISCO = '*';
@@ -17,16 +18,21 @@ typedef struct
 
 typedef struct
 {
+    char** palavras;
+} dicionario;
+
+typedef struct
+{
     int x;
     int y;
 } posicao;
 
 posicao posJogador;
 
+
+
 int main()
 {
-    posJogador.x = 0;
-    posJogador.y = 0;
     srand(time(NULL));
 
     menu();
@@ -34,9 +40,38 @@ int main()
 
 FILE* abrirAquivo(char* nomeArquivo)
 {
-    FILE *arquivo = fopen(nomeArquivo, "a");
+    FILE *arquivo = fopen(nomeArquivo, "r");
 
     return arquivo;
+}
+
+int consultarPalavra(char * palavra) {
+
+    FILE* arquivoPalavras = abrirAquivo("./palavras.txt");
+
+    //char palavras[111][9];
+
+    if(arquivoPalavras == NULL) {
+        printf("NÃ£o foi possÃ­vel carregar as palavras");
+    }else {
+
+        int i = 0;
+        while(!feof(arquivoPalavras)) {
+            char palavraArquivo[9];
+            fgets(palavraArquivo, 9, arquivoPalavras);
+
+            size_t ln = strlen(palavraArquivo) - 1;
+            if (*palavraArquivo && palavraArquivo[ln] == '\n')
+                palavraArquivo[ln] = '\0';
+
+            if(strcmp(palavraArquivo, palavra) == 0) {
+                return 1;
+            }
+        }
+        close(arquivoPalavras);
+    }
+
+    return 0;
 }
 
 void menu()
@@ -49,8 +84,7 @@ void menu()
         printf("\n\n**** Campo Minado ****\n");
         printf("\n");
         printf("[1] - Novo jogo\n");
-        printf("[2] - Recordes\n");
-        printf("[3] - Sair\n");
+        printf("[2] - Sair\n");
         printf("\n");
 
         opcao = getch();
@@ -61,15 +95,12 @@ void menu()
             novoJogo();
             break;
         case '2':
-            recordes();
-            break;
-        case '3':
             break;
         default:
             printf("Opcao invalida");
         }
     }
-    while(opcao != '3' );
+    while(opcao != '2' );
 }
 
 void novoJogo()
@@ -84,9 +115,9 @@ void novoJogo()
         system("cls");
         printf("\n\n**** Novo Jogo ****\n");
         printf("\n");
-        printf("[1] - Facil (8x8) - 13 bombas\n");
-        printf("[2] - Médio (12x12) - 28 bombas\n");
-        printf("[3] - Difícil (16x16) - 51 bombas\n");
+        printf("[1] - Facil (8x8) - 5 bombas\n");
+        printf("[2] - Medio (12x12) - 15 bombas\n");
+        printf("[3] - Dificil (16x16) - 25 bombas\n");
         printf("[4] - Voltar ao menu\n");
         printf("\n");
 
@@ -95,22 +126,22 @@ void novoJogo()
         switch(opcao)
         {
         case '1':
-            gameObject.quantidadeBombas = 3;
+            gameObject.quantidadeBombas = 5;
             gameObject.tamanhoMapa = 8;
             jogar(gameObject);
             break;
         case '2':
-            gameObject.quantidadeBombas = 28;
+            gameObject.quantidadeBombas = 15;
             gameObject.tamanhoMapa = 12;
             jogar(gameObject);
             break;
         case '3':
-            gameObject.quantidadeBombas = 51;
+            gameObject.quantidadeBombas = 25;
             gameObject.tamanhoMapa = 16;
             jogar(gameObject);
             break;
         case '4':
-            break;
+            return;
         default:
             printf("Opcao invalida");
         }
@@ -121,6 +152,8 @@ void novoJogo()
 void jogar(game *gameObject)
 {
     int ganhou = 0;
+    posJogador.x = 0;
+    posJogador.y = 0;
 
     // carrega o mapa com as bombas
     criarMapa(gameObject);
@@ -314,6 +347,23 @@ void criarMapaMascarado(game* gameObject)
     }
 }
 
+int mostrarPosicao(
+    int x, int y,
+    game* gameObject) {
+
+
+    if(gameObject->mapa[x][y] != BOMBA)
+    {
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
+        return 1;
+    }
+    else
+    {
+        gameObject->mapaMascarado[x][y] = ASTERISCO;
+        return 0;
+    }
+}
+
 void clicaNoMapa(game* gameObject)
 {
     char opcao = getch();
@@ -359,97 +409,31 @@ void clicaNoMapa(game* gameObject)
         printf("Digite a palavra: ");
         scanf("%s", &palavra);
 
-        printf("\nHUUUM %s", palavra);
+        int ganhou = consultarPalavra(palavra);
+
+        if(ganhou == 1) {
+            printf("GANHOU!\n\n");
+
+            system("pause");
+            getch();
+
+            menu();
+        }
+
         break;
     }
     case '\r':
     {
-        mostrarPosicao(posJogador.x, posJogador.y, gameObject);
-    }
-    }
+        int perdeu = mostrarPosicao(posJogador.x, posJogador.y, gameObject);
 
-
-}
-
-void mostrarPosicao(
-    int x, int y,
-    game* gameObject) {
-
-
-    if(gameObject->mapa[x][y] != BOMBA)
-    {
-        gameObject->mapaMascarado[x][y] = ASTERISCO;
-    }
-    else
-    {
-        gameObject->mapaMascarado[x][y] = ASTERISCO;
-    }
-}
-/*
-void mostrarPosicao(
-    int x, int y,
-    game* gameObject)
-{
-    if(gameObject->mapaMascarado[x][y] == ASTERISCO)
-    {
-        return;
-    }
-
-    if(gameObject->mapa[x][y] != BOMBA)
-    {
-        gameObject->mapaMascarado[x][y] = ASTERISCO;
-    }
-    else
-    {
-        gameObject->mapaMascarado[x][y] = ASTERISCO;
-    }
-
-    if(gameObject->mapa[x][y] == VAZIO)
-    {
-        if(x+1 < gameObject->tamanhoMapa)
-        {
-            mostrarPosicao(x + 1, y + 0, gameObject);
-        }
-
-        if((x+1 < gameObject->tamanhoMapa) && (y+1 < gameObject->tamanhoMapa))
-        {
-            mostrarPosicao(x + 1, y + 1, gameObject);
-        }
-
-        if((x-1 >= 0) && (y+1 < gameObject->tamanhoMapa))
-        {
-            mostrarPosicao(x - 1, y + 1, gameObject);
-        }
-
-        if((x-1 >= 0))
-        {
-            mostrarPosicao(x - 1, y + 0, gameObject);
-        }
-
-        if((x-1 >= 0) && (y-1 >= 0))
-        {
-            mostrarPosicao(x - 1, y - 1, gameObject);
-        }
-
-        if((y-1 >= 0))
-        {
-            mostrarPosicao(x + 0, y - 1, gameObject);
-        }
-
-        if((y+1 < gameObject->tamanhoMapa))
-        {
-            mostrarPosicao(x + 0, y + 1, gameObject);
-        }
-
-        if((x+1 < gameObject->tamanhoMapa) && (y-1 >= 0))
-        {
-            mostrarPosicao(x + 1, y - 1, gameObject);
+        if(perdeu == 0) {
+            printf("PERDEU!\n\n");
+            system("pause");
+            getch();
+            menu();
         }
     }
-}*/
-
-void recordes()
-{
+    }
 }
 
 
