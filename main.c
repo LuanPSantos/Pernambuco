@@ -3,6 +3,20 @@
 #include <conio.h>
 #include <string.h>
 
+typedef struct
+{
+    int tamanhoMapa;
+    int quantidadeBombas;
+    char** mapa;
+    char** mapaMascarado; // # ou *
+} JOGO;
+
+typedef struct
+{
+    int x;
+    int y;
+} POSICAO;
+
 char BOMBA = '@';
 char ASTERISCO = '*';
 char CERQUILHA = '#';
@@ -14,84 +28,17 @@ int PERDEU = -1;
 int GANHOU = 1;
 char PLAYER[] = " _ ";
 
-typedef struct
-{
-    int tamanhoMapa;
-    int quantidadeBombas;
-    char** mapa;
-    char** mapaMascarado; // # ou *
-} game;
-
-typedef struct
-{
-    char** palavras;
-} dicionario;
-
-typedef struct
-{
-    int x;
-    int y;
-} posicao;
-
-posicao posJogador;
+POSICAO posJogador;
 char letrasEncontradas[10];
 int iLetrasEncontradas = 0;
 char pernambuco[11] = "PERNAMBUCO";
 
 int main()
 {
+
     srand(time(NULL));
 
     menu();
-}
-
-int arrayLength(char * arr)
-{
-    return (int)( sizeof(arr) / sizeof(arr[0]));
-}
-
-FILE* abrirAquivo(char* nomeArquivo)
-{
-    FILE *arquivo = fopen(nomeArquivo, "r");
-
-    return arquivo;
-}
-
-// 0 = continua, 1 = ganhou
-int consultarPalavra(char * palavra)
-{
-
-    FILE* arquivoPalavras = abrirAquivo("./palavras.txt");
-
-    if(arquivoPalavras == NULL)
-    {
-        printf("Não foi possível carregar as palavras");
-    }
-    else
-    {
-
-        while(!feof(arquivoPalavras))
-        {
-            char palavraArquivo[11];
-            fgets(palavraArquivo, 11, arquivoPalavras);
-
-            // remove o \n do final da palavra vinda do arquivo
-            size_t ln = strlen(palavraArquivo) - 1;
-            if (*palavraArquivo && palavraArquivo[ln] == '\n')
-                palavraArquivo[ln] = VAZIO;
-
-            // Se encontrou a palavra digita no arquivo, então
-            // GANHOU
-            if(strcmp(palavraArquivo, palavra) == 0)
-            {
-                close(arquivoPalavras);
-                return GANHOU;
-            }
-        }
-        close(arquivoPalavras);
-    }
-
-    return CONTINUAR;
 }
 
 void menu()
@@ -148,7 +95,7 @@ void novoJogo()
 {
 
     char opcao = '0';
-    game gameObject;
+    JOGO jogo;
 
     do
     {
@@ -166,19 +113,19 @@ void novoJogo()
         switch(opcao)
         {
         case '1':
-            gameObject.quantidadeBombas = 5;
-            gameObject.tamanhoMapa = 8;
-            jogar(gameObject);
+            jogo.quantidadeBombas = 5;
+            jogo.tamanhoMapa = 8;
+            jogar(jogo);
             return;
         case '2':
-            gameObject.quantidadeBombas = 10;
-            gameObject.tamanhoMapa = 12;
-            jogar(gameObject);
+            jogo.quantidadeBombas = 10;
+            jogo.tamanhoMapa = 12;
+            jogar(jogo);
             return;
         case '3':
-            gameObject.quantidadeBombas = 15;
-            gameObject.tamanhoMapa = 16;
-            jogar(gameObject);
+            jogo.quantidadeBombas = 15;
+            jogo.tamanhoMapa = 16;
+            jogar(jogo);
             return;
         case '4':
             return;
@@ -189,7 +136,7 @@ void novoJogo()
     while(opcao != '4' || opcao != '3' || opcao != '2' || opcao != '1');
 }
 
-void jogar(game *gameObject)
+void jogar(JOGO *jogo)
 {
 
     // reseta os valores toda vez que iniciar um novo jogo
@@ -204,19 +151,19 @@ void jogar(game *gameObject)
     }
 
     // carrega o mapa com as bombas
-    criarMapa(gameObject);
+    criarMapa(jogo);
 
     // cria uma mascara para o mapa original
-    criarMapaMascarado(gameObject);
+    criarMapaMascarado(jogo);
 
     do
     {
         ganhou = resultado;
         system("cls");
 
-        for(int y = 0; y < gameObject->tamanhoMapa; y++)
+        for(int y = 0; y < jogo->tamanhoMapa; y++)
         {
-            for(int x = 0; x < gameObject->tamanhoMapa; x++)
+            for(int x = 0; x < jogo->tamanhoMapa; x++)
             {
                 // Mostra o cursor do player na posicao atual do mesmo
                 if(x == posJogador.x && y == posJogador.y && resultado != -1)
@@ -227,16 +174,15 @@ void jogar(game *gameObject)
                 {
                     // mostra os valores do mapa original,
                     // caso no mapa mascarado estiver com * na mesma posicao
-                    if(gameObject->mapaMascarado[y][x] == ASTERISCO)
+                    if(jogo->mapaMascarado[y][x] == ASTERISCO)
                     {
-                        printf(" %c ", gameObject->mapa[y][x]);
+                        printf(" %c ", jogo->mapa[y][x]);
                     }
                     else
                     {
-                        printf(" %c ", gameObject->mapaMascarado[y][x]);
+                        printf(" %c ", jogo->mapaMascarado[y][x]);
                     }
                 }
-
             }
 
             printf("\n");
@@ -244,7 +190,7 @@ void jogar(game *gameObject)
 
         if(resultado == 0)
         {
-            resultado = executarAcao(gameObject);
+            resultado = executarAcao(jogo);
         }
     }
     while (ganhou == 0);
@@ -265,104 +211,104 @@ void jogar(game *gameObject)
 
     }
 
-    free(gameObject->mapa);
-    free(gameObject->mapaMascarado);
+    free(jogo->mapa);
+    free(jogo->mapaMascarado);
 }
 
-void criarMapa(game* gameObject)
+void criarMapa(JOGO* jogo)
 {
 
-    int qntPosLivre = gameObject->tamanhoMapa * gameObject->tamanhoMapa;
-    posicao posicoesLivres[qntPosLivre];
+    int qntPosLivre = jogo->tamanhoMapa * jogo->tamanhoMapa;
+    POSICAO posicoesLivres[qntPosLivre];
 
-    char **mapa = (char **)malloc(gameObject->tamanhoMapa * sizeof(char*));
-    for(int i = 0; i < gameObject->tamanhoMapa; i++) mapa[i] = (char*) malloc(gameObject->tamanhoMapa * sizeof(char));
+    char **mapa = (char **)malloc(jogo->tamanhoMapa * sizeof(char*));
+    for(int i = 0; i < jogo->tamanhoMapa; i++) mapa[i] = (char*) malloc(jogo->tamanhoMapa * sizeof(char));
 
-    gameObject->mapa = mapa;
+    jogo->mapa = mapa;
 
     // Cria o mapa vazio (com espacos em branco)
-    for(int y = 0; y < gameObject->tamanhoMapa; y++)
+    for(int y = 0; y < jogo->tamanhoMapa; y++)
     {
-        for(int x = 0; x < gameObject->tamanhoMapa; x++)
+        for(int x = 0; x < jogo->tamanhoMapa; x++)
         {
-            gameObject->mapa[y][x] = ' ';
+            jogo->mapa[y][x] = ' ';
 
             // Salva as posicoes livres do Mapa em um array unidimencional
-            posicoesLivres[y * gameObject->tamanhoMapa + x].x = x;
-            posicoesLivres[y * gameObject->tamanhoMapa + x].y = y;
+            posicoesLivres[y * jogo->tamanhoMapa + x].x = x;
+            posicoesLivres[y * jogo->tamanhoMapa + x].y = y;
         }
     }
 
     // Coloca as bombas aleatoriamente no Mapa
-    for(int i = 0; i < gameObject->quantidadeBombas; i++)
+    for(int i = 0; i < jogo->quantidadeBombas; i++)
     {
-        int x = rand() % gameObject->tamanhoMapa;
-        int y = rand() % gameObject->tamanhoMapa;
+        int x = rand() % jogo->tamanhoMapa;
+        int y = rand() % jogo->tamanhoMapa;
 
-        gameObject->mapa[y][x] = BOMBA;
-        posicoesLivres[y * gameObject->tamanhoMapa + x].x = -1;
-        posicoesLivres[y * gameObject->tamanhoMapa + x].y = -1;
+        jogo->mapa[y][x] = BOMBA;
+        posicoesLivres[y * jogo->tamanhoMapa + x].x = -1;
+        posicoesLivres[y * jogo->tamanhoMapa + x].y = -1;
         qntPosLivre--;
     }
 
     // Conta e coloca os numeros no Mapa
-    for(int y = 0; y < gameObject->tamanhoMapa; y++)
+    for(int y = 0; y < jogo->tamanhoMapa; y++)
     {
-        for(int x = 0; x < gameObject->tamanhoMapa; x++)
+        for(int x = 0; x < jogo->tamanhoMapa; x++)
         {
             int contadorBombas = 0;
 
-            if(gameObject->mapa[y][x] != BOMBA)
+            if(jogo->mapa[y][x] != BOMBA)
             {
 
                 // conta +1 para cada bomba ao redor da posicao (x,y)
                 // sem ultrapassar os limites do Mapa
-                if((y+1 < gameObject->tamanhoMapa) && (gameObject->mapa[y+1][x+0] == BOMBA))
+                if((y+1 < jogo->tamanhoMapa) && (jogo->mapa[y+1][x+0] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((y+1 < gameObject->tamanhoMapa) && (x+1 < gameObject->tamanhoMapa) && (gameObject->mapa[y+1][x+1] == BOMBA))
+                if((y+1 < jogo->tamanhoMapa) && (x+1 < jogo->tamanhoMapa) && (jogo->mapa[y+1][x+1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((y-1 >= 0) && (x+1 < gameObject->tamanhoMapa) && (gameObject->mapa[y-1][x+1] == BOMBA))
+                if((y-1 >= 0) && (x+1 < jogo->tamanhoMapa) && (jogo->mapa[y-1][x+1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((y-1 >= 0) && (gameObject->mapa[y-1][x+0] == BOMBA))
+                if((y-1 >= 0) && (jogo->mapa[y-1][x+0] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((y-1 >= 0) && (x-1 >= 0) && (gameObject->mapa[y-1][x-1] == BOMBA))
+                if((y-1 >= 0) && (x-1 >= 0) && (jogo->mapa[y-1][x-1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((x-1 >= 0) && (gameObject->mapa[y+0][x-1] == BOMBA))
+                if((x-1 >= 0) && (jogo->mapa[y+0][x-1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((x+1 < gameObject->tamanhoMapa) && (gameObject->mapa[y+0][x+1] == BOMBA))
+                if((x+1 < jogo->tamanhoMapa) && (jogo->mapa[y+0][x+1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
-                if((y+1 < gameObject->tamanhoMapa) && (x-1 >= 0) && (gameObject->mapa[y+1][x-1] == BOMBA))
+                if((y+1 < jogo->tamanhoMapa) && (x-1 >= 0) && (jogo->mapa[y+1][x-1] == BOMBA))
                 {
                     contadorBombas++;
                 }
 
                 if(contadorBombas != 0)
                 {
-                    posicoesLivres[y * gameObject->tamanhoMapa + x].x = -1;
-                    posicoesLivres[y * gameObject->tamanhoMapa + x].y = -1;
+                    posicoesLivres[y * jogo->tamanhoMapa + x].x = -1;
+                    posicoesLivres[y * jogo->tamanhoMapa + x].y = -1;
                     qntPosLivre--;
-                    gameObject->mapa[y][x] = contadorBombas + '0';
+                    jogo->mapa[y][x] = contadorBombas + '0';
                 }
             }
         }
@@ -370,8 +316,8 @@ void criarMapa(game* gameObject)
 
     // Cria um novo array para salvar as posicoes livres restantes no Mapa,
     // Apos o preenchimento das bombas e dos numeros
-    posicao posLivres[qntPosLivre];
-    for(int i = 0, j = 0; i < gameObject->tamanhoMapa * gameObject->tamanhoMapa; i++)
+    POSICAO posLivres[qntPosLivre];
+    for(int i = 0, j = 0; i < jogo->tamanhoMapa * jogo->tamanhoMapa; i++)
     {
         if(posicoesLivres[i].x != -1 && posicoesLivres[i].y != -1)
         {
@@ -409,24 +355,24 @@ void criarMapa(game* gameObject)
         int y = posLivres[numerosAleatorios[i]].y;
         int x = posLivres[numerosAleatorios[i]].x;
 
-        gameObject->mapa[y][x] = pernambuco[i];
+        jogo->mapa[y][x] = pernambuco[i];
     }
 }
 
-void criarMapaMascarado(game* gameObject)
+void criarMapaMascarado(JOGO* jogo)
 {
 
-    char **mapaMascarado = (char **)malloc(gameObject->tamanhoMapa * sizeof(char*));
-    for(int i = 0; i < gameObject->tamanhoMapa; i++) mapaMascarado[i] = (char*) malloc(gameObject->tamanhoMapa * sizeof(char));
+    char **mapaMascarado = (char **)malloc(jogo->tamanhoMapa * sizeof(char*));
+    for(int i = 0; i < jogo->tamanhoMapa; i++) mapaMascarado[i] = (char*) malloc(jogo->tamanhoMapa * sizeof(char));
 
-    gameObject->mapaMascarado = mapaMascarado;
+    jogo->mapaMascarado = mapaMascarado;
 
     // Iniciando o Mapa Mascarado com Cerquilhas (#)
-    for(int x = 0; x < gameObject->tamanhoMapa; x++)
+    for(int x = 0; x < jogo->tamanhoMapa; x++)
     {
-        for(int y = 0; y < gameObject->tamanhoMapa; y++)
+        for(int y = 0; y < jogo->tamanhoMapa; y++)
         {
-            gameObject->mapaMascarado[x][y] = CERQUILHA;
+            jogo->mapaMascarado[x][y] = CERQUILHA;
         }
     }
 }
@@ -434,12 +380,12 @@ void criarMapaMascarado(game* gameObject)
 // 0 = continua, -1 = perdeu
 int mostrarPosicao(
     int x, int y,
-    game* gameObject)
+    JOGO* jogo)
 {
 
-    gameObject->mapaMascarado[y][x] = ASTERISCO;
+    jogo->mapaMascarado[y][x] = ASTERISCO;
 
-    if(gameObject->mapa[y][x] == BOMBA)
+    if(jogo->mapa[y][x] == BOMBA)
     {
         return PERDEU;
     }
@@ -449,9 +395,9 @@ int mostrarPosicao(
         // add a letra no array de letras encontradas
         for(int i = 0; i < strlen(pernambuco); i++)
         {
-            if(pernambuco[i] == gameObject->mapa[y][x])
+            if(pernambuco[i] == jogo->mapa[y][x])
             {
-                letrasEncontradas[iLetrasEncontradas] = gameObject->mapa[y][x];
+                letrasEncontradas[iLetrasEncontradas] = jogo->mapa[y][x];
                 iLetrasEncontradas++;
             }
         }
@@ -461,7 +407,7 @@ int mostrarPosicao(
 }
 
 // -1 = perdeu, 0 = continua, 1 = ganhou
-int executarAcao(game* gameObject)
+int executarAcao(JOGO* jogo)
 {
     char opcao = getch();
 
@@ -477,7 +423,7 @@ int executarAcao(game* gameObject)
     }
     case 's':
     {
-        if((posJogador.y+1) <= (gameObject->tamanhoMapa - 1))
+        if((posJogador.y+1) <= (jogo->tamanhoMapa - 1))
         {
             posJogador.y++;
         }
@@ -493,7 +439,7 @@ int executarAcao(game* gameObject)
     }
     case 'd':
     {
-        if((posJogador.x+1) <= (gameObject->tamanhoMapa - 1))
+        if((posJogador.x+1) <= (jogo->tamanhoMapa - 1))
         {
             posJogador.x++;
         }
@@ -517,7 +463,7 @@ int executarAcao(game* gameObject)
     }
     case '\r':
     {
-        return mostrarPosicao(posJogador.x, posJogador.y, gameObject);
+        return mostrarPosicao(posJogador.x, posJogador.y, jogo);
     }
     default:
         return CONTINUAR;
@@ -552,6 +498,55 @@ int validarPalavra(char* palavra)
     }
 
     return TRUE;
+}
+
+int arrayLength(char * arr)
+{
+    return (int)( sizeof(arr) / sizeof(arr[0]));
+}
+
+FILE* abrirAquivo(char* nomeArquivo)
+{
+    FILE *arquivo = fopen(nomeArquivo, "r");
+
+    return arquivo;
+}
+
+// 0 = continua, 1 = ganhou
+int consultarPalavra(char * palavra)
+{
+
+    FILE* arquivoPalavras = abrirAquivo("./palavras.txt");
+
+    if(arquivoPalavras == NULL)
+    {
+        printf("Não foi possível carregar as palavras");
+    }
+    else
+    {
+
+        while(!feof(arquivoPalavras))
+        {
+            char palavraArquivo[11];
+            fgets(palavraArquivo, 11, arquivoPalavras);
+
+            // remove o \n do final da palavra vinda do arquivo
+            size_t ln = strlen(palavraArquivo) - 1;
+            if (*palavraArquivo && palavraArquivo[ln] == '\n')
+                palavraArquivo[ln] = VAZIO;
+
+            // Se encontrou a palavra digita no arquivo, então
+            // GANHOU
+            if(strcmp(palavraArquivo, palavra) == 0)
+            {
+                close(arquivoPalavras);
+                return GANHOU;
+            }
+        }
+        close(arquivoPalavras);
+    }
+
+    return CONTINUAR;
 }
 
 
