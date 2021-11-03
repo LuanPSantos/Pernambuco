@@ -19,7 +19,7 @@ typedef struct
     int tamanhoMapa;
     int quantidadeBombas;
     char** mapa;
-    char** mapaMascarado; // # e *
+    char** mapaMascarado; // # ou *
 } game;
 
 typedef struct
@@ -45,7 +45,8 @@ int main()
     menu();
 }
 
-int arrayLength(char * arr) {
+int arrayLength(char * arr)
+{
     return (int)( sizeof(arr) / sizeof(arr[0]));
 }
 
@@ -57,17 +58,20 @@ FILE* abrirAquivo(char* nomeArquivo)
 }
 
 // 0 = continua, 1 = ganhou
-int consultarPalavra(char * palavra) {
+int consultarPalavra(char * palavra)
+{
 
     FILE* arquivoPalavras = abrirAquivo("./palavras.txt");
 
-    //char palavras[111][9];
-
-    if(arquivoPalavras == NULL) {
+    if(arquivoPalavras == NULL)
+    {
         printf("Não foi possível carregar as palavras");
-    }else {
+    }
+    else
+    {
 
-        while(!feof(arquivoPalavras)) {
+        while(!feof(arquivoPalavras))
+        {
             char palavraArquivo[11];
             fgets(palavraArquivo, 11, arquivoPalavras);
 
@@ -76,7 +80,10 @@ int consultarPalavra(char * palavra) {
             if (*palavraArquivo && palavraArquivo[ln] == '\n')
                 palavraArquivo[ln] = VAZIO;
 
-            if(strcmp(palavraArquivo, palavra) == 0) {
+            // Se encontrou a palavra digita no arquivo, então
+            // GANHOU
+            if(strcmp(palavraArquivo, palavra) == 0)
+            {
                 close(arquivoPalavras);
                 return GANHOU;
             }
@@ -120,7 +127,8 @@ void menu()
     while(opcao != '3' );
 }
 
-void instrucoes() {
+void instrucoes()
+{
     system("cls");
     printf("\n\n**** Instrucoes ****\n");
     printf("\n");
@@ -190,7 +198,8 @@ void jogar(game *gameObject)
     posJogador.x = 0;
     posJogador.y = 0;
     iLetrasEncontradas = 0;
-    for(int i = 0; i < arrayLength(letrasEncontradas); i++) {
+    for(int i = 0; i < arrayLength(letrasEncontradas); i++)
+    {
         letrasEncontradas[i] = VAZIO;
     }
 
@@ -233,19 +242,23 @@ void jogar(game *gameObject)
             printf("\n");
         }
 
-        if(resultado == 0){
+        if(resultado == 0)
+        {
             resultado = executarAcao(gameObject);
         }
     }
     while (ganhou == 0);
 
-    if(ganhou == 1) {
+    if(ganhou == 1)
+    {
         printf("\n\n****** GANHOU! ******\n\n");
 
         system("pause");
         getch();
 
-    }else if(ganhou == -1) {
+    }
+    else if(ganhou == -1)
+    {
         printf("\n\n!!!!!! PERDEU! !!!!!!!\n\n");
         system("pause");
         getch();
@@ -344,7 +357,8 @@ void criarMapa(game* gameObject)
                     contadorBombas++;
                 }
 
-                if(contadorBombas != 0) {
+                if(contadorBombas != 0)
+                {
                     posicoesLivres[y * gameObject->tamanhoMapa + x].x = -1;
                     posicoesLivres[y * gameObject->tamanhoMapa + x].y = -1;
                     qntPosLivre--;
@@ -357,8 +371,10 @@ void criarMapa(game* gameObject)
     // Cria um novo array para salvar as posicoes livres restantes no Mapa,
     // Apos o preenchimento das bombas e dos numeros
     posicao posLivres[qntPosLivre];
-    for(int i = 0, j = 0; i < gameObject->tamanhoMapa * gameObject->tamanhoMapa; i++) {
-        if(posicoesLivres[i].x != -1 && posicoesLivres[i].y != -1) {
+    for(int i = 0, j = 0; i < gameObject->tamanhoMapa * gameObject->tamanhoMapa; i++)
+    {
+        if(posicoesLivres[i].x != -1 && posicoesLivres[i].y != -1)
+        {
             posLivres[j].x = posicoesLivres[i].x;
             posLivres[j].y = posicoesLivres[i].y;
             j++;
@@ -369,17 +385,20 @@ void criarMapa(game* gameObject)
     // para usar no array com as posicoes livres restantes
     int qntNumerosAleatorios = strlen(pernambuco);
     int iSorteado = 0, numerosAleatorios[qntNumerosAleatorios];
-    do{
+    do
+    {
         numerosAleatorios[iSorteado] = rand() % qntPosLivre;
         int igual = 0;
-        for(int j = 0; j < iSorteado; j++){
+        for(int j = 0; j < iSorteado; j++)
+        {
             if(numerosAleatorios[j] == numerosAleatorios[iSorteado])
                 igual = 1;
         }
 
         if(igual == 0)
             iSorteado++;
-    }while(iSorteado < qntNumerosAleatorios);
+    }
+    while(iSorteado < qntNumerosAleatorios);
 
 
     // para cada numero aleatorio gerado
@@ -415,7 +434,8 @@ void criarMapaMascarado(game* gameObject)
 // 0 = continua, -1 = perdeu
 int mostrarPosicao(
     int x, int y,
-    game* gameObject) {
+    game* gameObject)
+{
 
     gameObject->mapaMascarado[y][x] = ASTERISCO;
 
@@ -427,8 +447,10 @@ int mostrarPosicao(
     {
         // Se na posicao (x,y) tem uma letra,
         // add a letra no array de letras encontradas
-        for(int i = 0; i < strlen(pernambuco); i++) {
-            if(pernambuco[i] == gameObject->mapa[y][x]) {
+        for(int i = 0; i < strlen(pernambuco); i++)
+        {
+            if(pernambuco[i] == gameObject->mapa[y][x])
+            {
                 letrasEncontradas[iLetrasEncontradas] = gameObject->mapa[y][x];
                 iLetrasEncontradas++;
             }
@@ -486,7 +508,8 @@ int executarAcao(game* gameObject)
 
         int palavraEstaValida = validarPalavra(palavra);
 
-        if(palavraEstaValida == TRUE) {
+        if(palavraEstaValida == TRUE)
+        {
             return consultarPalavra(palavra);
         }
 
@@ -501,20 +524,25 @@ int executarAcao(game* gameObject)
     }
 }
 
-int validarPalavra(char* palavra) {
+int validarPalavra(char* palavra)
+{
 
     int i = 0;
-    while( palavra[i] != VAZIO ) {
+    while( palavra[i] != VAZIO )
+    {
         palavra[i] = toupper(palavra[i]);
         int encontrou = FALSE;
-        for(int j = 0; j < iLetrasEncontradas; j++) {
+        for(int j = 0; j < iLetrasEncontradas; j++)
+        {
 
-            if(palavra[i] == letrasEncontradas[j]) {
+            if(palavra[i] == letrasEncontradas[j])
+            {
                 encontrou = TRUE;
             }
         }
 
-        if(encontrou == FALSE) {
+        if(encontrou == FALSE)
+        {
             printf("\nEncontre todas as letras da palavra!\n");
             system("pause");
             return FALSE;
