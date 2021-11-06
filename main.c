@@ -182,7 +182,8 @@ void jogar(JOGO *jogo)
         system("cls");
 
         printf("\n Palavras ja usadas: \n-");
-        for(int i = 0; i < jogo->quantidadePalavras; i++) {
+        for(int i = 0; i < jogo->quantidadePalavras; i++)
+        {
             printf(" %s -", jogo->palavrasAcertadas[i]);
         }
 
@@ -203,11 +204,16 @@ void jogar(JOGO *jogo)
                     // caso no mapa mascarado estiver com * na mesma posicao
                     if(jogo->mapaMascarado[y][x] == ASTERISCO)
                     {
-                        if(jogo->mapa[y][x] == BOMBA) {
+                        if(jogo->mapa[y][x] == BOMBA)
+                        {
                             red();
-                        }else if(jogo->mapa[y][x] >= 'A' && jogo->mapa[y][x] <= 'Z') {
+                        }
+                        else if(jogo->mapa[y][x] >= 'A' && jogo->mapa[y][x] <= 'Z')
+                        {
                             green();
-                        }else{
+                        }
+                        else
+                        {
                             reset();
                         }
 
@@ -573,7 +579,8 @@ int consultarPalavra(JOGO* jogo, char* palavra)
 
     FILE* arquivoPalavras = abrirAquivo("./palavras.txt");
 
-    if(arquivoPalavras == NULL){
+    if(arquivoPalavras == NULL)
+    {
         yellow();
         printf("\n\nNão foi possível carregar as palavras");
         reset();
@@ -636,23 +643,28 @@ int marcarPontuacao (int resultado)
 
 }
 
-void red() {
+void red()
+{
     printf("\033[0;31m");
 }
 
-void green() {
+void green()
+{
     printf("\033[0;32m");
 }
 
-void yellow() {
+void yellow()
+{
     printf("\033[0;33m");
 }
 
-void blue() {
+void blue()
+{
     printf("\033[0;36m");
 }
 
-void reset () {
-  printf("\033[0m");
+void reset ()
+{
+    printf("\033[0m");
 }
 
