@@ -18,25 +18,28 @@
 
 typedef struct
 {
-    int tamanhoMapa;
-    int quantidadeBombas;
-    int quantidadePalavras;
-    char** mapa;
-    char** mapaMascarado; // # ou *
-    char** palavrasAcertadas;
-} JOGO;
-
-typedef struct
-{
     int x;
     int y;
 } POSICAO;
 
+typedef struct
+{
+    int pontuacao;
+    POSICAO posJogador;
+
+    int quantidadePalavras;
+    char** palavrasAcertadas;
+
+    int iLetrasEncontradas;
+    char letrasEncontradas[10];
+
+    int quantidadeBombas;
+    int tamanhoMapa;
+    char** mapa;
+    char** mapaMascarado; // # ou *
+} JOGO;
+
 char PLAYER[] = " _ ";
-int pontuacao = 0;
-POSICAO posJogador;
-char letrasEncontradas[10];
-int iLetrasEncontradas = 0;
 char pernambuco[11] = "PERNAMBUCO";
 
 int main()
@@ -148,16 +151,11 @@ void novoJogo()
     while(opcao != '4' || opcao != '3' || opcao != '2' || opcao != '1');
 }
 
-void jogar(JOGO *jogo)
-{
-
-    // reseta os valores toda vez que iniciar um novo jogo
-    int resultadoFinal = 0;
-    int resultado = 0;
-    pontuacao = 0;
-    posJogador.x = 0;
-    posJogador.y = 0;
-    iLetrasEncontradas = 0;
+void limparJogo(JOGO* jogo) {
+    jogo->pontuacao = 0;
+    jogo->posJogador.x = 0;
+    jogo->posJogador.y = 0;
+    jogo->iLetrasEncontradas = 0;
     jogo->quantidadePalavras = 0;
 
     char **palavras = (char **)malloc(QNTD_PONTOS_PRA_GANHAR * sizeof(char*));
@@ -165,36 +163,19 @@ void jogar(JOGO *jogo)
 
     jogo->palavrasAcertadas = palavras;
 
-    for(int i = 0; i < arrayLength(letrasEncontradas); i++)
+    for(int i = 0; i < arrayLength(jogo->letrasEncontradas); i++)
     {
-        letrasEncontradas[i] = VAZIO;
+        jogo->letrasEncontradas[i] = VAZIO;
     }
+}
 
-    // carrega o mapa com as bombas
-    criarMapa(jogo);
-
-    // cria uma mascara para o mapa original
-    criarMapaMascarado(jogo);
-
-    do
-    {
-        resultadoFinal = resultado;
-        system("cls");
-
-        printf("\n Palavras ja usadas: \n-");
-        for(int i = 0; i < jogo->quantidadePalavras; i++)
-        {
-            printf(" %s -", jogo->palavrasAcertadas[i]);
-        }
-
-        printf("\n\n\n");
-
-        for(int y = 0; y < jogo->tamanhoMapa; y++)
+void desenharMapa(JOGO* jogo, int resultado) {
+    for(int y = 0; y < jogo->tamanhoMapa; y++)
         {
             for(int x = 0; x < jogo->tamanhoMapa; x++)
             {
                 // Mostra o cursor do player na posicao atual do mesmo
-                if(x == posJogador.x && y == posJogador.y && resultado != PERDEU)
+                if(x == jogo->posJogador.x && y == jogo->posJogador.y && resultado != PERDEU)
                 {
                     printf(PLAYER);
                 }
@@ -229,12 +210,17 @@ void jogar(JOGO *jogo)
 
             printf("\n");
         }
+}
 
-        if(resultado == 0)
-            resultado = executarAcao(jogo);
+void desenharPalavrasJaUsadas(JOGO* jogo) {
+    printf("\n Palavras ja usadas: \n-");
+    for(int i = 0; i < jogo->quantidadePalavras; i++)
+    {
+        printf(" %s -", jogo->palavrasAcertadas[i]);
     }
-    while (resultadoFinal != PERDEU && (pontuacao < QNTD_PONTOS_PRA_GANHAR || resultadoFinal == CONTINUAR));
+}
 
+void finalizarJogo(int resultadoFinal) {
     if(resultadoFinal == GANHOU)
     {
         green();
@@ -249,6 +235,40 @@ void jogar(JOGO *jogo)
         reset();
         system("pause");
     }
+}
+
+void jogar(JOGO *jogo)
+{
+
+    // reseta os valores toda vez que iniciar um novo jogo
+    int resultadoFinal = 0;
+    int resultado = 0;
+
+    limparJogo(jogo);
+
+    // carrega o mapa com as bombas
+    criarMapa(jogo);
+
+    // cria uma mascara para o mapa original
+    criarMapaMascarado(jogo);
+
+    do
+    {
+        resultadoFinal = resultado;
+        system("cls");
+
+        desenharPalavrasJaUsadas(jogo);
+
+        printf("\n\n\n");
+
+        desenharMapa(jogo, resultado);
+
+        if(resultado == 0)
+            resultado = executarAcao(jogo);
+    }
+    while (resultadoFinal != PERDEU && (jogo->pontuacao < QNTD_PONTOS_PRA_GANHAR || resultadoFinal == CONTINUAR));
+
+    finalizarJogo(resultadoFinal);
 
     free(jogo->mapa);
     free(jogo->mapaMascarado);
@@ -437,8 +457,8 @@ int mostrarPosicao(
         {
             if(pernambuco[i] == jogo->mapa[y][x])
             {
-                letrasEncontradas[iLetrasEncontradas] = jogo->mapa[y][x];
-                iLetrasEncontradas++;
+                jogo->letrasEncontradas[jogo->iLetrasEncontradas] = jogo->mapa[y][x];
+                jogo->iLetrasEncontradas++;
             }
         }
 
@@ -456,36 +476,36 @@ int executarAcao(JOGO* jogo)
     case 'W':
     case 'w':
     {
-        if((posJogador.y-1) >= 0)
+        if((jogo->posJogador.y-1) >= 0)
         {
-            posJogador.y--;
+            jogo->posJogador.y--;
         }
         return CONTINUAR;
     }
     case 'S':
     case 's':
     {
-        if((posJogador.y+1) <= (jogo->tamanhoMapa - 1))
+        if((jogo->posJogador.y+1) <= (jogo->tamanhoMapa - 1))
         {
-            posJogador.y++;
+            jogo->posJogador.y++;
         }
         return CONTINUAR;
     }
     case 'A':
     case 'a':
     {
-        if((posJogador.x-1) >= 0)
+        if((jogo->posJogador.x-1) >= 0)
         {
-            posJogador.x--;
+            jogo->posJogador.x--;
         }
         return CONTINUAR;
     }
     case 'D':
     case 'd':
     {
-        if((posJogador.x+1) <= (jogo->tamanhoMapa - 1))
+        if((jogo->posJogador.x+1) <= (jogo->tamanhoMapa - 1))
         {
-            posJogador.x++;
+            jogo->posJogador.x++;
         }
         return CONTINUAR;
     }
@@ -499,12 +519,12 @@ int executarAcao(JOGO* jogo)
         scanf("%s", &palavra);
 
 
-        int palavraEstaValida = validarPalavra(palavra);
+        int palavraEstaValida = validarPalavra(jogo, palavra);
 
         if(palavraEstaValida == TRUE)
         {
             int resultado = consultarPalavra(jogo, palavra);
-            return marcarPontuacao(resultado);
+            return marcarPontuacao(jogo, resultado);
         }
 
         return CONTINUAR;
@@ -512,14 +532,14 @@ int executarAcao(JOGO* jogo)
     case '\r':
     case ' ':
     {
-        return mostrarPosicao(posJogador.x, posJogador.y, jogo);
+        return mostrarPosicao(jogo->posJogador.x, jogo->posJogador.y, jogo);
     }
     default:
         return CONTINUAR;
     }
 }
 
-int validarPalavra(char* palavra)
+int validarPalavra(JOGO* jogo, char* palavra)
 {
 
     int i = 0;
@@ -527,9 +547,9 @@ int validarPalavra(char* palavra)
     {
         palavra[i] = toupper(palavra[i]);
         int encontrou = FALSE;
-        for(int j = 0; j < iLetrasEncontradas; j++)
+        for(int j = 0; j < jogo->iLetrasEncontradas; j++)
         {
-            if(palavra[i] == letrasEncontradas[j])
+            if(palavra[i] == jogo->letrasEncontradas[j])
             {
                 encontrou = TRUE;
             }
@@ -617,15 +637,15 @@ int consultarPalavra(JOGO* jogo, char* palavra)
 
 }
 
-int marcarPontuacao (int resultado)
+int marcarPontuacao (JOGO* jogo, int resultado)
 {
     if (resultado == ACERTOU)
     {
-        pontuacao = pontuacao + 1;
-        if (pontuacao < QNTD_PONTOS_PRA_GANHAR)
+        jogo->pontuacao++;
+        if (jogo->pontuacao < QNTD_PONTOS_PRA_GANHAR)
         {
             blue();
-            printf("\n\nVoce acertou %i palavras, acerte mais %i palavras para ganhar!!\n\n", pontuacao, (QNTD_PONTOS_PRA_GANHAR-pontuacao));
+            printf("\n\nVoce acertou %i palavras, acerte mais %i palavras para ganhar!!\n\n", jogo->pontuacao, (QNTD_PONTOS_PRA_GANHAR-jogo->pontuacao));
             reset();
             getch();
 
